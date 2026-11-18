@@ -631,21 +631,28 @@ pageEl.addEventListener("click",e=>{
   cardClick(e);
 });
 
-/* ---- text signup (Netlify Forms, with a text-to-join fallback) ---- */
-const signupHTML=big=>`<div class="signup"><div><h2>${big?"Get first dibs by text":"Text alerts"}</h2><p>New arrivals, restocks and subscriber-only deals, a few texts a month. No spam.</p></div>
-  <form class="sform" novalidate><div class="row"><input type="text" name="name" placeholder="First name" autocomplete="given-name" aria-label="First name"><input type="tel" name="phone" placeholder="Mobile number" autocomplete="tel" inputmode="tel" aria-label="Mobile number" required></div>
-  <label class="ck"><input type="checkbox" name="consent"><span>I agree to receive marketing texts from ${SHOP.name} at this number. Consent isn't a condition of purchase. Msg &amp; data rates may apply. Reply STOP to opt out.</span></label>
-  <button type="submit">Sign me up</button><div class="msg" role="status"></div></form></div>`;
+/* ---- drop alerts sign-up: email and/or text. Saved by the subscribe function; Netlify Forms and a text-to-join link are the fallbacks ---- */
+const signupHTML=big=>`<div class="signup"><div><h2>${big?"Get first dibs on new drops":"Drop alerts"}</h2><p>Be first to hear when a new scent is on the way, the day it lands, and when a deal starts. A few messages a month, no spam.</p></div>
+  <form class="sform" novalidate><div class="row"><input type="text" name="name" placeholder="First name" autocomplete="given-name" aria-label="First name"><input type="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" aria-label="Email address"></div>
+  <input type="tel" name="phone" placeholder="Mobile number (optional, for texts)" autocomplete="tel" inputmode="tel" aria-label="Mobile number, optional">
+  <input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp">
+  <label class="ck"><input type="checkbox" name="consent"><span>Text me too. I agree to receive marketing texts from ${SHOP.name} at this number. Consent isn't a condition of purchase. Msg &amp; data rates may apply. Reply STOP to opt out.</span></label>
+  <button type="submit">Sign me up</button><div class="msg" role="status"></div><div class="fine">Unsubscribe any time. We never share your details.</div></form></div>`;
 document.addEventListener("submit",async e=>{
   const form=e.target.closest(".sform"); if(!form) return; e.preventDefault();
-  const name=form.elements.name.value.trim().slice(0,40), d=form.elements.phone.value.replace(/\D/g,"").replace(/^1(?=\d{10}$)/,""), msg=form.querySelector(".msg"), btn=form.querySelector("button");
+  const name=form.elements.name.value.trim().slice(0,40), email=form.elements.email.value.trim().slice(0,120), d=form.elements.phone.value.replace(/\D/g,"").replace(/^1(?=\d{10}$)/,""), ok=form.elements.consent.checked, msg=form.querySelector(".msg"), btn=form.querySelector("button");
   const fail=t=>{ msg.className="msg err"; msg.textContent=t; };
-  if(d.length!==10) return fail("Please enter a 10-digit US mobile number.");
-  if(!form.elements.consent.checked) return fail("Please tick the box so we have your OK to text you.");
-  btn.disabled=true; btn.textContent="Signing you up…"; let sent=false;
-  try{ const r=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({"form-name":"text-signup",name,phone:d,consent:"yes",page:PAGE}).toString()}); sent=r.ok&&/^https?:$/.test(location.protocol); }catch(err){}
-  if(sent){ form.innerHTML=`<div class="msg">You're on the list${name?", "+esc(name):""}. We'll text you from ${SHOP.phone} when something new lands.</div>`; }
-  else { btn.disabled=false; btn.textContent="Sign me up"; msg.className="msg"; msg.innerHTML=`One more step: <a href="${smsHref("JOIN"+(name?" - "+name:""))}" style="color:var(--gold2)">tap here to text JOIN to ${SHOP.phone}</a> and you're in.`; }
+  if(!email&&!d) return fail("Add your email, your mobile number, or both.");
+  if(email&&!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) return fail("That email doesn't look right. Mind checking it?");
+  if(d&&d.length!==10) return fail("Please enter a 10-digit US mobile number.");
+  if(d&&!ok) return fail("Tick the box so we have your OK to text you, or clear the number.");
+  btn.disabled=true; btn.textContent="Signing you up…"; let sent=false, live=false;
+  const web=/^https?:$/.test(location.protocol);
+  try{ const r=await fetch("/.netlify/functions/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,email,phone:d,consent:ok,page:PAGE,bot:form.elements.company.value})}); sent=live=web&&r.ok; }catch(err){}
+  if(!sent){ try{ const r=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({"form-name":"text-signup",name,email,phone:d,consent:ok?"yes":"no",page:PAGE}).toString()}); sent=web&&r.ok; }catch(err){} }
+  if(sent){ const hi="You're on the list"+(name?", "+esc(name):"")+".";
+    form.innerHTML=`<div class="msg">${hi} ${email?(live?"Watch your inbox for new drops and deals.":"We'll be in touch when something new lands."):""}${d?(email?" Text alerts are on the way too.":"Text alerts are launching soon, and you're first in line."):""}</div>`; }
+  else { btn.disabled=false; btn.textContent="Sign me up"; msg.className="msg"; msg.innerHTML=`That didn't go through. <a href="${smsHref("JOIN"+(name?" - "+name:"")+(email?" - "+email:""))}" style="color:var(--gold2)">Tap here to text JOIN to ${SHOP.phone}</a> and we'll add you.`; }
 });
 
 /* ---- shop + clones ---- */

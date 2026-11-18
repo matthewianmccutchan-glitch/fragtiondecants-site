@@ -500,7 +500,7 @@ a{color:inherit}
 .signup p{color:#d8d0c4;font-size:14px;line-height:1.5;margin-top:6px}
 .sform{display:flex;flex-direction:column;gap:8px}
 .sform .row{display:flex;gap:8px}
-.sform input[type=text],.sform input[type=tel]{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:46px;outline:none;font-size:15px}
+.sform input[type=text],.sform input[type=tel],.sform input[type=email]{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:46px;outline:none;font-size:15px}
 .sform input:focus{border-color:var(--gold)}
 .sform label.ck{display:flex;gap:9px;align-items:flex-start;font-size:11.5px;color:var(--mute);line-height:1.45;cursor:pointer}
 .sform label.ck input{margin-top:2px;width:18px;height:18px;flex:none;accent-color:var(--gold)}
@@ -689,3 +689,9 @@ body[data-page="build"] main{padding-bottom:120px}
 .vleft .trio.tph{position:absolute;inset:0;flex-direction:column;align-items:stretch;gap:2px}
 .vleft .trio.tph .pic{position:static;flex:1 1 0;min-height:0;height:auto;width:100%;object-position:46% 50%}
 .vleft:has(.tph) .pricefrom{background:rgba(18,16,14,.72);color:var(--ink)}
+
+/* drop alerts sign-up: email field, honeypot, small print */
+.sform>input[type=tel]{flex:none;width:100%}
+.sform .hp{position:absolute!important;left:-9999px;width:1px;height:1px;min-height:0;opacity:0;pointer-events:none}
+.sform .fine{font-size:11.5px;color:var(--mute)}
+@media (max-width:420px){.sform .row{flex-direction:column}}
